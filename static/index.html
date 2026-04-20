@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIOps Sentinel</title>
+  <style>
+    :root {
+      --bg:         #0d1117;
+      --surface:    #161b22;
+      --surface2:   #21262d;
+      --border:     #30363d;
+      --text:       #e6edf3;
+      --muted:      #8b949e;
+      --accent:     #58a6ff;
+      --green:      #3fb950;
+      --yellow:     #d29922;
+      --red:        #f85149;
+      --radius:     6px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 12px 24px; display: flex; align-items: center;
+      justify-content: space-between; flex-shrink: 0;
+    }
+    .logo { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .logo em { color: var(--accent); font-style: normal; }
+    .logo .ver { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .header-nav a { color: var(--muted); text-decoration: none; font-size: 13px; margin-left: 20px; transition: color .15s; }
+    .header-nav a:hover { color: var(--text); }
+    main { flex: 1; display: flex; overflow: hidden; }
+
+    /* Scan panel */
+    .scan-panel {
+      width: 310px; min-width: 260px; background: var(--surface);
+      border-right: 1px solid var(--border); display: flex;
+      flex-direction: column; overflow: hidden;
+    }
+    .panel-title {
+      padding: 14px 16px; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .scan-controls { padding: 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    textarea.inventory {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 11px; line-height: 1.6; padding: 10px 12px;
+      resize: none; height: 150px; outline: none; transition: border-color .15s;
+    }
+    textarea.inventory:focus { border-color: var(--accent); }
+    .scan-btn {
+      margin-top: 10px; width: 100%; padding: 9px 0;
+      background: var(--accent); color: #0d1117; border: none;
+      border-radius: var(--radius); font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .scan-btn:hover { opacity: .85; }
+    .scan-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .scan-results { flex: 1; overflow-y: auto; padding: 12px; }
+    .scan-summary {
+      background: var(--surface2); border-radius: var(--radius);
+      padding: 12px; margin-bottom: 10px; font-size: 13px;
+    }
+    .counts { display: flex; gap: 16px; margin-top: 6px; font-size: 12px; }
+    .result-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 10px; border-radius: var(--radius); margin-bottom: 3px;
+      background: var(--surface2); font-size: 12px; gap: 6px;
+    }
+    .r-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .r-name { font-weight: 600; white-space: nowrap; }
+    .r-ver  { color: var(--muted); font-family: monospace; font-size: 11px; }
+    .r-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .r-days { font-size: 10px; color: var(--muted); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot.ok, .dot.active { background: var(--green); }
+    .dot.expired  { background: var(--red); }
+    .dot.critical { background: var(--yellow); }
+    .dot.unknown  { background: var(--muted); }
+    .badge { padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+    .badge.expired  { background: rgba(248,81,73,.18);  color: var(--red); }
+    .badge.critical { background: rgba(210,153,34,.18); color: var(--yellow); }
+    .badge.ok       { background: rgba(63,185,80,.18);  color: var(--green); }
+    .badge.active   { background: rgba(63,185,80,.18);  color: var(--green); }
+    .badge.unknown  { background: rgba(139,148,158,.18);color: var(--muted); }
+    .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 16px; line-height: 1.7; }
+
+    /* Chat panel */
+    .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-header {
+      padding: 14px 24px; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+      border-bottom: 1px solid var(--border); display: flex;
+      align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .model-pill {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; font-size: 11px; padding: 2px 9px;
+      font-weight: 500; text-transform: none; color: var(--text); letter-spacing: 0;
+    }
+    .ctx-tag { margin-left: auto; font-size: 11px; color: var(--green); text-transform: none; letter-spacing: 0; font-weight: 500; }
+    .messages {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .msg { display: flex; flex-direction: column; max-width: 78%; gap: 4px; }
+    .msg.user      { align-self: flex-end;   align-items: flex-end; }
+    .msg.assistant { align-self: flex-start; align-items: flex-start; }
+    .msg-label { font-size: 11px; color: var(--muted); padding: 0 4px; }
+    .bubble {
+      padding: 11px 15px; border-radius: 12px; font-size: 14px;
+      line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+    }
+    .msg.user .bubble {
+      background: var(--accent); color: #0d1117; border-bottom-right-radius: 3px;
+    }
+    .msg.assistant .bubble {
+      background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 3px;
+    }
+    .msg.assistant .bubble.error { border-color: var(--yellow); color: var(--yellow); }
+    .notice { text-align: center; font-size: 11px; color: var(--muted); padding: 2px 0; align-self: center; }
+    .typing { display: flex; gap: 5px; align-items: center; padding: 4px 2px; }
+    .tdot { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce 1.3s infinite; }
+    .tdot:nth-child(2) { animation-delay: .2s; }
+    .tdot:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%,60%,100% { opacity:.3; transform:translateY(0); }
+      30%          { opacity:1;  transform:translateY(-5px); }
+    }
+    .quick-actions { padding: 4px 24px 12px; display: flex; flex-wrap: wrap; gap: 7px; flex-shrink: 0; }
+    .qbtn {
+      padding: 5px 13px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; color: var(--muted); font-size: 12px; cursor: pointer;
+      transition: border-color .15s, color .15s; white-space: nowrap;
+    }
+    .qbtn:hover { border-color: var(--accent); color: var(--accent); }
+    .qbtn:disabled { opacity: .4; cursor: not-allowed; }
+    .input-area {
+      padding: 12px 24px 16px; border-top: 1px solid var(--border);
+      display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0;
+    }
+    textarea.msg-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px;
+      padding: 11px 15px; resize: none; min-height: 44px; max-height: 110px;
+      outline: none; transition: border-color .15s; line-height: 1.5;
+    }
+    textarea.msg-input:focus { border-color: var(--accent); }
+    .send-btn {
+      padding: 11px 22px; background: var(--accent); color: #0d1117; border: none;
+      border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;
+      transition: opacity .15s; white-space: nowrap; flex-shrink: 0;
+    }
+    .send-btn:hover { opacity: .85; }
+    .send-btn:disabled { opacity: .4; cursor: not-allowed; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">&#x1F6E1;&#xFE0F; <em>AIOps</em> Sentinel <span class="ver">v1.0.0</span></div>
+  <nav class="header-nav">
+    <a href="/docs" target="_blank">API Docs &#x2197;</a>
+    <a href="https://endoflife.date" target="_blank">endoflife.date &#x2197;</a>
+  </nav>
+</header>
+
+<main>
+  <aside class="scan-panel">
+    <div class="panel-title">&#x1F4CB; Inventory Scanner</div>
+    <div class="scan-controls">
+      <textarea class="inventory" id="inventory">[
+  {"name": "nginx",    "version": "1.24"},
+  {"name": "python",   "version": "3.9"},
+  {"name": "redis",    "version": "7.0"},
+  {"name": "debian",   "version": "10"},
+  {"name": "node",     "version": "20"},
+  {"name": "postgres", "version": "13"}
+]</textarea>
+      <button class="scan-btn" id="scanBtn" onclick="runScan()">&#x25B6; Run EOL Scan</button>
+    </div>
+    <div class="scan-results" id="scanResults">
+      <div class="empty">Click <strong>Run EOL Scan</strong><br>to check your components.<br><br>Then ask the AI assistant about your results.</div>
+    </div>
+  </aside>
+
+  <section class="chat-panel">
+    <div class="chat-header">
+      &#x1F4AC; AI Assistant
+      <span class="model-pill" id="modelPill">llama3.2</span>
+      <span class="ctx-tag" id="ctxTag" style="display:none">&#x2713; Scan context loaded</span>
+    </div>
+    <div class="messages" id="messages">
+      <div class="msg assistant">
+        <div class="msg-label">AI Assistant</div>
+        <div class="bubble">Hi! I am your AIOps Sentinel assistant &#x1F44B;
+
+I can help you:
+&#x2022; Understand which components are end-of-life
+&#x2022; Prioritise upgrades by urgency and risk
+&#x2022; Explain security implications of EOL software
+&#x2022; Generate a step-by-step upgrade action plan
+
+Run a scan on the left, then ask me anything about your results!</div>
+      </div>
+    </div>
+    <div class="quick-actions" id="quickActions">
+      <button class="qbtn" onclick="quickAsk('What components are most critical and why?')">&#x1F534; Most critical?</button>
+      <button class="qbtn" onclick="quickAsk('Generate a prioritised upgrade action plan.')">&#x1F4CB; Upgrade plan</button>
+      <button class="qbtn" onclick="quickAsk('What are the security risks of running EOL software in production?')">&#x1F512; Security risks</button>
+      <button class="qbtn" onclick="quickAsk('Summarise the scan results in 3 bullet points.')">&#x1F4CA; Summarise</button>
+      <button class="qbtn" onclick="quickAsk('Which component should I upgrade first and what version should I upgrade to?')">&#x2B06; What to upgrade first?</button>
+    </div>
+    <div class="input-area">
+      <textarea class="msg-input" id="msgInput" placeholder="Ask about your infrastructure risks…"
+        rows="1" onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="send()">Send &#x23CE;</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  var history_  = [];
+  var scanId    = null;
+  var streaming = false;
+
+  // ── Scan ──────────────────────────────────────────────────────────────────
+  async function runScan() {
+    var items;
+    try { items = JSON.parse(document.getElementById('inventory').value); }
+    catch (_) { alert('Invalid JSON in inventory — check the format.'); return; }
+
+    var btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning…';
+    setEmpty('scanResults', 'Querying endoflife.date API…');
+
+    try {
+      var res = await fetch('/scan/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items, days_warn: 45 }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var report = await res.json();
+
+      scanId = report.scan_id;
+      renderResults(report);
+      document.getElementById('ctxTag').style.display = '';
+      addNotice('Scan complete — ' + report.total + ' components, ' + report.at_risk + ' at risk.');
+    } catch (e) {
+      setEmpty('scanResults', 'Scan failed: ' + e.message, 'var(--red)');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '\u25B6 Run EOL Scan';
+    }
+  }
+
+  function setEmpty(id, text, color) {
+    var el = document.createElement('div');
+    el.className = 'empty';
+    el.textContent = text;
+    if (color) el.style.color = color;
+    var container = document.getElementById(id);
+    container.textContent = '';
+    container.appendChild(el);
+  }
+
+  function renderResults(report) {
+    var ORDER = { expired: 0, critical: 1, unknown: 2, ok: 3, active: 4 };
+    var sorted = report.results.slice().sort(function(a, b) {
+      return (ORDER[a.status] != null ? ORDER[a.status] : 9) -
+             (ORDER[b.status] != null ? ORDER[b.status] : 9);
+    });
+
+    var container = document.getElementById('scanResults');
+    container.textContent = '';
+
+    // Summary card
+    var summary = document.createElement('div');
+    summary.className = 'scan-summary';
+
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:13px;font-weight:600';
+    title.textContent = 'Scan Results';
+    summary.appendChild(title);
+
+    var counts = document.createElement('div');
+    counts.className = 'counts';
+
+    var tSpan = document.createElement('span');
+    var tStrong = document.createElement('strong');
+    tStrong.textContent = String(report.total);
+    tSpan.appendChild(document.createTextNode('Total: '));
+    tSpan.appendChild(tStrong);
+
+    var rSpan = document.createElement('span');
+    rSpan.style.color = 'var(--red)';
+    var rStrong = document.createElement('strong');
+    rStrong.textContent = String(report.at_risk);
+    rSpan.appendChild(document.createTextNode('At-risk: '));
+    rSpan.appendChild(rStrong);
+
+    var tme = document.createElement('span');
+    tme.style.cssText = 'color:var(--muted);font-size:11px';
+    tme.textContent = new Date(report.scanned_at).toLocaleTimeString();
+
+    counts.appendChild(tSpan);
+    counts.appendChild(rSpan);
+    counts.appendChild(tme);
+    summary.appendChild(counts);
+    container.appendChild(summary);
+
+    // Result rows — all textContent, no innerHTML
+    for (var i = 0; i < sorted.length; i++) {
+      var r = sorted[i];
+      var daysLeft = r.days_remaining > 0  ? '+' + r.days_remaining + 'd' :
+                     r.days_remaining < -1 ? r.days_remaining + 'd' : '';
+
+      var row = document.createElement('div');
+      row.className = 'result-row';
+
+      var left = document.createElement('div');
+      left.className = 'r-left';
+
+      var dot = document.createElement('span');
+      dot.className = 'dot ' + r.status;
+
+      var name = document.createElement('span');
+      name.className = 'r-name';
+      name.textContent = r.name;
+
+      var ver = document.createElement('span');
+      ver.className = 'r-ver';
+      ver.textContent = 'v' + r.version;
+
+      left.appendChild(dot);
+      left.appendChild(name);
+      left.appendChild(ver);
+
+      var right = document.createElement('div');
+      right.className = 'r-right';
+
+      if (daysLeft) {
+        var ds = document.createElement('span');
+        ds.className = 'r-days';
+        ds.textContent = daysLeft;
+        right.appendChild(ds);
+      }
+
+      var badge = document.createElement('span');
+      badge.className = 'badge ' + r.status;
+      badge.textContent = r.status;
+      right.appendChild(badge);
+
+      row.appendChild(left);
+      row.appendChild(right);
+      container.appendChild(row);
+    }
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────────────────
+  function addNotice(text) {
+    var el = document.createElement('div');
+    el.className = 'notice';
+    el.textContent = '— ' + text + ' —';
+    document.getElementById('messages').appendChild(el);
+    scrollDown();
+  }
+
+  function addBubble(role, text) {
+    var wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
+
+    var label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = role === 'user' ? 'You' : 'AI Assistant';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    document.getElementById('messages').appendChild(wrap);
+    scrollDown();
+    return bubble;
+  }
+
+  function addTyping() {
+    var wrap = document.createElement('div');
+    wrap.className = 'msg assistant';
+    wrap.id = 'typing';
+
+    var label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = 'AI Assistant';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    var typing = document.createElement('div');
+    typing.className = 'typing';
+    for (var i = 0; i < 3; i++) {
+      var d = document.createElement('div');
+      d.className = 'tdot';
+      typing.appendChild(d);
+    }
+
+    bubble.appendChild(typing);
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    document.getElementById('messages').appendChild(wrap);
+    scrollDown();
+  }
+
+  async function send() {
+    var input = document.getElementById('msgInput');
+    var text  = input.value.trim();
+    if (!text || streaming) return;
+    input.value = '';
+    input.style.height = 'auto';
+    history_.push({ role: 'user', content: text });
+    addBubble('user', text);
+    await streamReply();
+  }
+
+  async function quickAsk(text) {
+    if (streaming) return;
+    history_.push({ role: 'user', content: text });
+    addBubble('user', text);
+    await streamReply();
+  }
+
+  async function streamReply() {
+    streaming = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.querySelectorAll('.qbtn').forEach(function(b) { b.disabled = true; });
+    addTyping();
+
+    try {
+      var res = await fetch('/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history_, scan_id: scanId }),
+      });
+
+      var typingEl = document.getElementById('typing');
+      if (typingEl) typingEl.remove();
+
+      if (!res.ok) {
+        var errData = await res.json().catch(function() { return { detail: 'HTTP ' + res.status }; });
+        var b = addBubble('assistant', '');
+        b.classList.add('error');
+        b.textContent = '\u26A0\uFE0F ' + (errData.detail || 'Request failed');
+        return;
+      }
+
+      var bubble  = addBubble('assistant', '');
+      var reader  = res.body.getReader();
+      var decoder = new TextDecoder();
+      var full    = '';
+      var buf     = '';
+
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+        buf += decoder.decode(result.value, { stream: true });
+        var lines = buf.split('\n');
+        buf = lines.pop();
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (!line.startsWith('data: ')) continue;
+          var raw = line.slice(6);
+          if (raw === '[DONE]') break;
+          try {
+            var obj = JSON.parse(raw);
+            if (obj.chunk) {
+              full += obj.chunk;
+              bubble.textContent = full;
+              scrollDown();
+            }
+            if (obj.error) {
+              bubble.classList.add('error');
+              bubble.textContent = '\u26A0\uFE0F ' + obj.error;
+            }
+          } catch (_) {}
+        }
+      }
+
+      history_.push({ role: 'assistant', content: full });
+
+    } catch (e) {
+      var typingEl2 = document.getElementById('typing');
+      if (typingEl2) typingEl2.remove();
+      var b2 = addBubble('assistant', '');
+      b2.classList.add('error');
+      b2.textContent = '\u26A0\uFE0F Could not reach AI assistant: ' + e.message +
+        '\n\nMake sure Ollama is running:\n  docker compose up ollama\n  docker exec -it <ollama> ollama pull llama3.2';
+    } finally {
+      streaming = false;
+      document.getElementById('sendBtn').disabled = false;
+      document.querySelectorAll('.qbtn').forEach(function(b) { b.disabled = false; });
+    }
+  }
+
+  function onKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  }
+  function resize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  }
+  function scrollDown() {
+    var el = document.getElementById('messages');
+    el.scrollTop = el.scrollHeight;
+  }
+</script>
+</body>
+</html>
