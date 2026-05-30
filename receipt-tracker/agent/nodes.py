@@ -64,44 +64,35 @@ def extract_node(state: AgentState) -> AgentState:
 
 
 # ── categorise ────────────────────────────────────────────────────────────────
-#
-# YOUR TURN — implement this function (5–10 lines).
-#
-# Goal: set state["category"] to one of:
-#   food | travel | shopping | utilities | healthcare | entertainment | other
-#
-# Two approaches to consider:
-#
-#   Option A — Rule-based (fast, no API cost, works offline)
-#   Map keywords found in the merchant name or item descriptions to a category.
-#   Example structure:
-#       KEYWORDS = {
-#           "food": ["restaurant", "cafe", "pizza", "grocery", "starbucks", ...],
-#           "travel": ["airline", "hotel", "uber", "petrol", "parking", ...],
-#           ...
-#       }
-#       merchant = state["receipt_data"]["merchant"].lower()
-#       for category, words in KEYWORDS.items():
-#           if any(w in merchant for w in words): ...
-#
-#   Option B — LLM-based (handles any merchant, ~20 tokens per call)
-#   Ask claude-haiku-4-5-20251001 to read the merchant + item list and reply
-#   with a single category word. Haiku is fast and cheap for this task.
-#
-# Trade-off: Option A is deterministic and zero-cost; Option B handles edge
-# cases a keyword list will miss (e.g. local restaurant names).
+
+VALID_CATEGORIES = frozenset(
+    {"food", "travel", "shopping", "utilities", "healthcare", "entertainment", "other"}
+)
+
 
 def categorise_node(state: AgentState) -> AgentState:
-    """Assign a spending category to the extracted receipt.
-
-    Implement the body below — set state["category"] before returning.
-    See the comment block above for two implementation approaches.
-    """
     if state.get("error") or not state.get("receipt_data"):
         return state
 
-    # TODO: replace this placeholder with your implementation
-    state["category"] = "other"
+    data = state["receipt_data"]
+    item_names = ", ".join(i.get("description", "") for i in data.get("items", []))
+
+    response = _client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=10,
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Merchant: {data.get('merchant', 'unknown')}\n"
+                f"Items: {item_names or 'not listed'}\n\n"
+                "Reply with ONE word — the spending category that best fits:\n"
+                "food | travel | shopping | utilities | healthcare | entertainment | other"
+            ),
+        }],
+    )
+
+    raw = response.content[0].text.strip().lower()
+    state["category"] = raw if raw in VALID_CATEGORIES else "other"
     return state
 
 

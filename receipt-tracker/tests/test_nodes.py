@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock, patch
 import pytest
-from agent.nodes import extract_node, respond_node
+from agent.nodes import extract_node, categorise_node, respond_node
 from agent.state import AgentState
 
 
@@ -55,6 +55,26 @@ def test_extract_node_handles_bad_json(mock_client):
 
     assert result["error"] is not None
     assert result["receipt_data"] is None
+
+
+@patch("agent.nodes._client")
+def test_categorise_node_known_category(mock_client):
+    mock_client.messages.create.return_value = MagicMock(
+        content=[MagicMock(text="food")]
+    )
+    state = _base_state(receipt_data=FAKE_RECEIPT)
+    result = categorise_node(state)
+    assert result["category"] == "food"
+
+
+@patch("agent.nodes._client")
+def test_categorise_node_falls_back_to_other(mock_client):
+    mock_client.messages.create.return_value = MagicMock(
+        content=[MagicMock(text="nonsense response")]
+    )
+    state = _base_state(receipt_data=FAKE_RECEIPT)
+    result = categorise_node(state)
+    assert result["category"] == "other"
 
 
 def test_respond_node_formats_upload_message():
