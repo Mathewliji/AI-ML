@@ -49,6 +49,14 @@ st.markdown("""
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Force all Streamlit-rendered text to be visible on dark background */
+.stApp, .stApp p, .stApp span, .stApp div,
+.stApp label, .stApp li, .stApp a,
+.stMarkdown, .stMarkdown p, .stMarkdown span,
+.stMarkdown li, .stMarkdown strong, .stMarkdown em {
+  color: #E4EAF0 !important;
+}
+
 /* ── App shell ── */
 .stApp {
   background: var(--bg) !important;
@@ -159,28 +167,45 @@ hr { border-color: var(--border) !important; margin: 0.9rem 0 !important; }
 
 .bubble {
   max-width: 76%; padding: 11px 15px;
-  font-family: var(--font-b); font-size: 0.9rem; line-height: 1.65;
-  color: var(--text); word-break: break-word;
+  font-family: var(--font-b) !important; font-size: 0.9rem !important;
+  line-height: 1.65 !important; word-break: break-word;
 }
+
+/* All text nodes inside any bubble — force white, no exceptions */
+.bubble, .bubble *, .bubble p, .bubble span,
+.bubble div, .bubble li, .bubble a, .bubble br {
+  color: #E4EAF0 !important;
+  font-family: var(--font-b) !important;
+  font-size: 0.9rem !important;
+}
+
 .bubble-user {
-  background: var(--bubble-user);
+  background: var(--bubble-user) !important;
   border: 1px solid rgba(37,211,102,0.22);
   border-radius: 18px 4px 18px 18px;
-  color: #DFF2E8;
   box-shadow: 0 2px 14px rgba(37,211,102,0.09);
 }
+.bubble-user, .bubble-user *, .bubble-user p,
+.bubble-user span, .bubble-user div {
+  color: #DFF2E8 !important;
+}
+
 .bubble-bot {
-  background: var(--bubble-bot);
+  background: var(--bubble-bot) !important;
   border: 1px solid var(--border);
   border-radius: 4px 18px 18px 18px;
-  color: var(--text);
   box-shadow: 0 2px 14px rgba(0,0,0,0.22);
 }
-.bubble strong { color: #ffffff; font-weight: 600; }
-.bubble em     { color: #9DB4C8; }
-.bubble code   {
-  background: rgba(37,211,102,0.13); color: var(--accent);
-  border-radius: 4px; padding: 1px 5px; font-size: 0.81rem;
+.bubble-bot, .bubble-bot *, .bubble-bot p,
+.bubble-bot span, .bubble-bot div {
+  color: #E4EAF0 !important;
+}
+
+.bubble strong, .bubble b { color: #ffffff !important; font-weight: 600 !important; }
+.bubble em, .bubble i     { color: #9DB4C8 !important; }
+.bubble code {
+  background: rgba(37,211,102,0.13) !important; color: #25D366 !important;
+  border-radius: 4px; padding: 1px 5px; font-size: 0.81rem !important;
 }
 .avatar {
   width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
