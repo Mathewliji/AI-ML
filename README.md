@@ -9,6 +9,7 @@ A growing collection of AI, ML, and MLOps projects — each self-contained in it
 | # | Project | Description | Stack |
 |---|---------|-------------|-------|
 | 01 | [aiops-sentinel](./aiops-sentinel/) | LLM-powered infrastructure EOL monitoring | Airflow · FastAPI · Ollama · Docker |
+| 02 | [receipt-tracker](./receipt-tracker/) | WhatsApp-style AI receipt & expense tracker | Claude Vision · LangGraph · FastAPI · PostgreSQL · Streamlit |
 
 ---
 
@@ -22,7 +23,8 @@ AI-ML/
 ├── _template/              ← copy this to start a new project
 │
 ├── aiops-sentinel/         ← project 01
-└── <your-next-project>/    ← project 02, 03, ...
+├── receipt-tracker/        ← project 02
+└── <your-next-project>/    ← project 03, 04, ...
 ```
 
 Each project folder is fully self-contained:
