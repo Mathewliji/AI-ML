@@ -24,6 +24,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://receipts:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/receipts
+      MOCK_MODE: ${MOCK_MODE:-false}
     depends_on:
       db:
         condition: service_healthy
