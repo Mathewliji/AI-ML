@@ -5,258 +5,276 @@ import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://localhost:8001")
 
-st.set_page_config(
-    page_title="Receipt Tracker AI",
-    page_icon="🧾",
-    layout="centered",
-)
+st.set_page_config(page_title="Receipt Tracker AI", page_icon="🧾", layout="centered")
 
-# ── Markdown → safe HTML (handles bold, italic, code, newlines, bullets) ──────
+# ── Theme state ───────────────────────────────────────────────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = True
+
+DARK = st.session_state.dark_mode
+
+# ── Theme tokens ──────────────────────────────────────────────────────────────
+if DARK:
+    T = dict(
+        bg="#0B0F14", sidebar="#0E1319", card="#141C26", elevated="#1A2535",
+        text="#E4EAF0", text_sub="#7A8FA6", text_muted="#3D5166",
+        border="rgba(255,255,255,0.07)", border_acc="rgba(37,211,102,0.28)",
+        bub_u_bg="#163426", bub_u_txt="#DFF2E8",
+        bub_b_bg="#161E2A", bub_b_txt="#E4EAF0",
+        av_bot_bg="#1A2535", strong="#ffffff", em="#9DB4C8",
+        hdr_bg="#141C26", hdr_border="rgba(255,255,255,0.07)",
+        title_c="#ffffff", sub_c="#7A8FA6",
+    )
+else:
+    T = dict(
+        bg="#F5F7FA", sidebar="#EAECF0", card="#FFFFFF", elevated="#E2E8F0",
+        text="#1A202C", text_sub="#4A5568", text_muted="#A0AEC0",
+        border="rgba(0,0,0,0.08)", border_acc="rgba(37,211,102,0.5)",
+        bub_u_bg="#DCF8C6", bub_u_txt="#0D3B20",
+        bub_b_bg="#FFFFFF",  bub_b_txt="#1A202C",
+        av_bot_bg="#E2E8F0", strong="#0D3B20", em="#4A5568",
+        hdr_bg="#FFFFFF", hdr_border="rgba(0,0,0,0.08)",
+        title_c="#1A202C", sub_c="#4A5568",
+    )
+
+# ── Markdown → safe HTML with theme-aware inline colours ─────────────────────
 def _md(text: str) -> str:
     t = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     t = re.sub(r'\*\*(.+?)\*\*',
-               r'<strong style="color:#ffffff;font-weight:600">\1</strong>', t)
+               rf'<strong style="color:{T["strong"]};font-weight:600">\1</strong>', t)
     t = re.sub(r'\*(.+?)\*',
-               r'<em style="color:#9DB4C8;font-style:italic">\1</em>', t)
+               rf'<em style="color:{T["em"]};font-style:italic">\1</em>', t)
     t = re.sub(r'`(.+?)`',
                r'<code style="background:rgba(37,211,102,0.15);color:#25D366;'
                r'border-radius:4px;padding:1px 6px;font-size:0.82rem">\1</code>', t)
     t = t.replace("\n", "<br>")
     return t
 
-# ── Design system ─────────────────────────────────────────────────────────────
-st.markdown("""
+# ── CSS ───────────────────────────────────────────────────────────────────────
+st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
 
-:root {
-  --bg:            #0B0F14;
-  --bg-sidebar:    #0E1319;
-  --bg-card:       #141C26;
-  --bg-elevated:   #1A2535;
-  --bubble-user:   #163426;
-  --bubble-bot:    #161E2A;
-  --text:          #E4EAF0;
-  --text-sub:      #7A8FA6;
-  --text-muted:    #3D5166;
-  --accent:        #25D366;
-  --accent-dark:   #1AAF52;
-  --accent-glow:   rgba(37,211,102,0.15);
-  --accent-glow2:  rgba(37,211,102,0.06);
-  --border:        rgba(255,255,255,0.07);
-  --border-accent: rgba(37,211,102,0.28);
-  --radius:        14px;
-  --radius-sm:     8px;
-  --font-d:        'Bricolage Grotesque', sans-serif;
-  --font-b:        'DM Sans', sans-serif;
-}
+:root {{
+  --bg:           {T["bg"]};
+  --sidebar:      {T["sidebar"]};
+  --card:         {T["card"]};
+  --elevated:     {T["elevated"]};
+  --text:         {T["text"]};
+  --text-sub:     {T["text_sub"]};
+  --text-muted:   {T["text_muted"]};
+  --accent:       #25D366;
+  --accent-dark:  #1AAF52;
+  --accent-glow:  rgba(37,211,102,0.15);
+  --border:       {T["border"]};
+  --border-acc:   {T["border_acc"]};
+  --radius:       14px;
+  --font-d:       'Bricolage Grotesque', sans-serif;
+  --font-b:       'DM Sans', sans-serif;
+}}
 
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after {{ box-sizing: border-box; }}
 
-/* ── App shell ── */
-.stApp {
+.stApp {{
   background: var(--bg) !important;
   font-family: var(--font-b) !important;
   color: var(--text) !important;
-}
-.stApp::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(37,211,102,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37,211,102,0.018) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none; z-index: 0;
-}
-.main .block-container {
+}}
+.main .block-container {{
   padding-top: 0.75rem !important;
   max-width: 720px !important;
-}
+}}
 
 /* ── Sidebar ── */
-section[data-testid="stSidebar"] {
-  background: var(--bg-sidebar) !important;
+section[data-testid="stSidebar"] {{
+  background: var(--sidebar) !important;
   border-right: 1px solid var(--border) !important;
-}
-section[data-testid="stSidebar"] > div { padding: 1.4rem 1.1rem !important; }
+}}
+section[data-testid="stSidebar"] > div {{
+  padding: 1rem 1rem !important;
+}}
+
+/* Sidebar text */
 section[data-testid="stSidebar"] p,
 section[data-testid="stSidebar"] span,
-section[data-testid="stSidebar"] label { color: var(--text) !important; font-family: var(--font-b) !important; }
-section[data-testid="stSidebar"] h2 {
-  font-family: var(--font-d) !important; font-size: 0.95rem !important;
-  font-weight: 700 !important; letter-spacing: 0.01em !important;
-  color: var(--text) !important; white-space: nowrap !important;
-  overflow: visible !important; margin: 1.2rem 0 0.5rem !important;
-}
-
-/* ── File uploader ── no overflow:hidden, no interference with Browse button */
-[data-testid="stFileUploader"] {
-  background: var(--bg-card) !important;
-  border: 1.5px dashed var(--border-accent) !important;
-  border-radius: var(--radius) !important;
-}
-[data-testid="stFileUploaderDropzoneInstructions"] span,
-[data-testid="stFileUploaderDropzoneInstructions"] p { color: var(--text-sub) !important; }
-[data-testid="stFileUploader"]:hover { border-color: var(--accent) !important; }
-
-/* ── Sidebar pill buttons — only direct .stButton wrappers, NOT inside uploader ── */
-section[data-testid="stSidebar"] > div > div > div > div > .stButton > button,
-section[data-testid="stSidebar"] > div > div > div > .stButton > button {
-  font-family: var(--font-d) !important; font-weight: 600 !important;
-  font-size: 0.84rem !important; border-radius: 999px !important;
-  transition: all 0.18s ease !important; width: 100% !important;
-}
-section[data-testid="stSidebar"] > div > div > div > div > .stButton > button[kind="primary"],
-section[data-testid="stSidebar"] > div > div > div > .stButton > button[kind="primary"] {
-  background: var(--accent) !important; color: #071A0E !important;
-  border: none !important; box-shadow: 0 0 22px var(--accent-glow) !important;
-}
-section[data-testid="stSidebar"] > div > div > div > div > .stButton > button[kind="primary"]:hover,
-section[data-testid="stSidebar"] > div > div > div > .stButton > button[kind="primary"]:hover {
-  background: var(--accent-dark) !important;
-  box-shadow: 0 0 32px rgba(37,211,102,0.3) !important;
-  transform: translateY(-1px) !important;
-}
-section[data-testid="stSidebar"] > div > div > div > div > .stButton > button:not([kind="primary"]),
-section[data-testid="stSidebar"] > div > div > div > .stButton > button:not([kind="primary"]) {
-  background: var(--bg-elevated) !important; color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-}
-
-/* ── Browse files button inside uploader — reset to natural style ── */
-[data-testid="stFileUploader"] button,
-[data-testid="stFileUploader"] .stButton > button {
-  border-radius: 6px !important; margin-top: 0 !important;
-  font-size: 0.8rem !important; width: auto !important;
-  border: 1px solid var(--border-accent) !important;
-  background: transparent !important; color: var(--accent) !important;
-  box-shadow: none !important; transform: none !important;
-}
-
-/* Sidebar element spacing */
-section[data-testid="stSidebar"] .element-container { margin-bottom: 0.5rem !important; }
-section[data-testid="stSidebar"] [data-testid="stImage"] { margin: 0.4rem 0 !important; }
-
-/* ── Divider ── */
-hr { border-color: var(--border) !important; margin: 0.9rem 0 !important; }
-
-/* ── Spinner ── */
-[data-testid="stSpinner"] p { color: var(--text-sub) !important; font-family: var(--font-b) !important; }
-
-/* ── Alerts ── */
-[data-testid="stAlert"] {
-  background: rgba(255,75,75,0.08) !important;
-  border: 1px solid rgba(255,75,75,0.22) !important;
-  border-radius: var(--radius-sm) !important; color: #FF8080 !important;
-}
-
-/* ── Chat input (bottom bar) ── */
-[data-testid="stChatInput"],
-[data-testid="stChatInputContainer"] textarea,
-.stChatInputContainer {
-  background: var(--bg-card) !important;
+section[data-testid="stSidebar"] label {{
   color: var(--text) !important;
   font-family: var(--font-b) !important;
-}
-[data-testid="stChatInput"] {
+}}
+
+/* Sidebar section headings — proper size, no truncation */
+section[data-testid="stSidebar"] h2 {{
+  font-family: var(--font-d) !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 1rem 0 0.5rem !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  line-height: 1.3 !important;
+}}
+
+/* ── File uploader box ── */
+[data-testid="stFileUploader"] {{
+  background: var(--card) !important;
+  border: 1.5px dashed var(--border-acc) !important;
+  border-radius: var(--radius) !important;
+}}
+[data-testid="stFileUploader"]:hover {{
+  border-color: var(--accent) !important;
+}}
+[data-testid="stFileUploaderDropzoneInstructions"] span,
+[data-testid="stFileUploaderDropzoneInstructions"] p {{
+  color: var(--text-sub) !important;
+}}
+
+/* Browse files button — stays natural inside the dashed box */
+[data-testid="stFileUploader"] button {{
+  border-radius: 8px !important;
+  border: 1px solid var(--border-acc) !important;
+  background: transparent !important;
+  color: var(--accent) !important;
+  font-size: 0.8rem !important;
+  width: auto !important;
+  margin-top: 0 !important;
+  box-shadow: none !important;
+}}
+
+/* ── Sidebar action buttons (pill) ── */
+section[data-testid="stSidebar"] .stButton > button {{
+  font-family: var(--font-d) !important;
+  font-weight: 600 !important;
+  font-size: 0.84rem !important;
+  border-radius: 999px !important;
+  width: 100% !important;
+  transition: all 0.18s ease !important;
+}}
+section[data-testid="stSidebar"] .stButton > button[kind="primary"] {{
+  background: var(--accent) !important;
+  color: #071A0E !important;
+  border: none !important;
+  box-shadow: 0 0 20px var(--accent-glow) !important;
+}}
+section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {{
+  background: var(--accent-dark) !important;
+  box-shadow: 0 0 28px rgba(37,211,102,0.3) !important;
+  transform: translateY(-1px) !important;
+}}
+section[data-testid="stSidebar"] .stButton > button:not([kind="primary"]) {{
+  background: var(--elevated) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+section[data-testid="stSidebar"] .stButton > button:not([kind="primary"]):hover {{
+  border-color: var(--border-acc) !important;
+  color: var(--accent) !important;
+}}
+
+/* Override the Browse files button BACK after the sidebar pill rule */
+[data-testid="stFileUploader"] button {{
+  border-radius: 8px !important;
+  width: auto !important;
+  background: transparent !important;
+  color: var(--accent) !important;
+  border: 1px solid var(--border-acc) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}}
+
+/* ── Theme toggle button in sidebar — small, top-right ── */
+.theme-toggle-wrap {{
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}}
+
+/* ── Divider ── */
+hr {{ border-color: var(--border) !important; margin: 0.75rem 0 !important; }}
+
+/* ── Spinner ── */
+[data-testid="stSpinner"] p {{
+  color: var(--text-sub) !important;
+  font-family: var(--font-b) !important;
+}}
+
+/* ── Alerts ── */
+[data-testid="stAlert"] {{
+  border-radius: 8px !important;
+  color: var(--text) !important;
+}}
+
+/* ── Chat input ── */
+[data-testid="stChatInput"] {{
   border: 1.5px solid var(--border) !important;
   border-radius: 999px !important;
+  background: var(--card) !important;
   transition: border-color 0.2s, box-shadow 0.2s !important;
-}
-[data-testid="stChatInput"]:focus-within {
-  border-color: var(--border-accent) !important;
+}}
+[data-testid="stChatInput"]:focus-within {{
+  border-color: var(--border-acc) !important;
   box-shadow: 0 0 0 3px var(--accent-glow) !important;
-}
-[data-testid="stChatInput"] textarea::placeholder { color: var(--text-muted) !important; }
-.stChatInputContainer { background: transparent !important; padding-bottom: 1rem !important; }
+}}
+[data-testid="stChatInput"] textarea {{
+  color: var(--text) !important;
+  background: transparent !important;
+  font-family: var(--font-b) !important;
+}}
+[data-testid="stChatInput"] textarea::placeholder {{
+  color: var(--text-muted) !important;
+}}
+.stChatInputContainer {{
+  background: transparent !important;
+  padding-bottom: 1rem !important;
+}}
 
-/* ── Custom chat bubbles ── */
-.chat-wrap { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; }
-.msg-row   { display: flex; align-items: flex-end; gap: 8px; }
-.msg-user  { justify-content: flex-end; }
-.msg-bot   { justify-content: flex-start; }
-
-.bubble {
-  max-width: 76%; padding: 11px 15px;
-  font-family: var(--font-b); font-size: 0.9rem;
-  line-height: 1.65; word-break: break-word;
-  color: var(--text);
-}
-.bubble-user {
-  background: var(--bubble-user);
-  border: 1px solid rgba(37,211,102,0.22);
-  border-radius: 18px 4px 18px 18px;
-  color: #DFF2E8;
-  box-shadow: 0 2px 14px rgba(37,211,102,0.09);
-}
-.bubble-bot {
-  background: var(--bubble-bot);
-  border: 1px solid var(--border);
-  border-radius: 4px 18px 18px 18px;
-  color: var(--text);
-  box-shadow: 0 2px 14px rgba(0,0,0,0.22);
-}
-.bubble strong, .bubble b { color: #ffffff; font-weight: 600; }
-.bubble em, .bubble i     { color: #9DB4C8; }
-.bubble code {
-  background: rgba(37,211,102,0.13); color: #25D366;
-  border-radius: 4px; padding: 1px 5px; font-size: 0.81rem;
-}
-.avatar {
-  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
-}
-.avatar-user { background: var(--accent); color: #071A0E; order: 2; }
-.avatar-bot  { background: var(--bg-elevated); border: 1px solid var(--border-accent); order: 0; }
-
-/* ── Header ── */
-.rt-header {
+/* ── Header card ── */
+.rt-header {{
   display: flex; align-items: center; gap: 13px;
   padding: 14px 18px; margin-bottom: 18px;
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
-  position: relative; overflow: hidden;
-}
-.rt-header::before {
+  background: {T["hdr_bg"]}; border: 1px solid {T["hdr_border"]};
+  border-radius: var(--radius); position: relative; overflow: hidden;
+}}
+.rt-header::before {{
   content: ''; position: absolute; left: 0; top: 0; bottom: 0;
   width: 3px; background: var(--accent); border-radius: 3px 0 0 3px;
-}
-.rt-header::after {
+}}
+.rt-header::after {{
   content: ''; position: absolute; top: -50px; right: -50px;
   width: 130px; height: 130px;
-  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  background: radial-gradient(circle, rgba(37,211,102,0.12), transparent 70%);
   pointer-events: none;
-}
-.rt-icon {
+}}
+.rt-icon {{
   width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
-  background: var(--accent-glow2); border: 1px solid var(--border-accent);
+  background: rgba(37,211,102,0.08); border: 1px solid {T["border_acc"]};
   display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
-}
-.rt-title {
+}}
+.rt-title {{
   font-family: var(--font-d); font-size: 1.1rem; font-weight: 700;
-  color: #fff; margin: 0; line-height: 1.2;
-}
-.rt-sub {
-  font-family: var(--font-b); font-size: 0.72rem; color: var(--text-sub);
-  margin: 3px 0 0; letter-spacing: 0.01em;
-}
-.rt-dot {
+  color: {T["title_c"]}; margin: 0; line-height: 1.2;
+}}
+.rt-sub {{
+  font-family: var(--font-b); font-size: 0.72rem; color: {T["sub_c"]};
+  margin: 3px 0 0;
+}}
+.rt-dot {{
   display: inline-block; width: 6px; height: 6px; border-radius: 50%;
   background: var(--accent); margin-right: 5px;
   animation: blink 2s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.45;transform:scale(.75)} }
-.rt-badge {
+}}
+@keyframes blink {{ 0%,100%{{opacity:1;transform:scale(1)}} 50%{{opacity:.45;transform:scale(.75)}} }}
+.rt-badge {{
   margin-left: auto; flex-shrink: 0;
-  background: var(--accent-glow2); border: 1px solid var(--border-accent);
+  background: rgba(37,211,102,0.08); border: 1px solid {T["border_acc"]};
   color: var(--accent); font-family: var(--font-d); font-size: 0.62rem;
   font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   padding: 3px 9px; border-radius: 999px;
-}
+}}
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
+::-webkit-scrollbar {{ width: 4px; }}
+::-webkit-scrollbar-track {{ background: transparent; }}
+::-webkit-scrollbar-thumb {{ background: var(--elevated); border-radius: 4px; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -288,6 +306,23 @@ if "messages" not in st.session_state:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
+
+    # Light / Dark toggle — top of sidebar
+    col_lbl, col_btn = st.columns([2, 1])
+    with col_lbl:
+        st.markdown(
+            f"<p style='margin:0;padding-top:6px;font-size:0.8rem;"
+            f"color:{T['text_sub']};font-family:DM Sans,sans-serif;'>"
+            f"{'🌙 Dark mode' if DARK else '☀️ Light mode'}</p>",
+            unsafe_allow_html=True,
+        )
+    with col_btn:
+        if st.button("☀️" if DARK else "🌙", key="theme_toggle"):
+            st.session_state.dark_mode = not DARK
+            st.rerun()
+
+    st.divider()
+
     st.markdown("## 📎 Upload Receipt")
     uploaded = st.file_uploader(
         "Drop a receipt image",
@@ -337,40 +372,34 @@ with st.sidebar:
             except requests.exceptions.RequestException as exc:
                 st.error(f"API error: {exc}")
 
-# ── Chat history ─────────────────────────────────────────────────────────────
-# Inline styles on every element — immune to Streamlit theme, CSS cascade,
-# and specificity fights regardless of light/dark mode setting.
+# ── Chat history — fully inline-styled, immune to theme cascade ───────────────
 _ROW   = "display:flex;align-items:flex-end;gap:8px;margin-bottom:10px;"
 _BBASE = ("max-width:76%;padding:12px 16px;border-radius:{r};"
           "font-family:'DM Sans',sans-serif;font-size:0.9rem;"
-          "line-height:1.65;word-break:break-word;color:{c};")
-_BUSER = _BBASE.format(r="18px 4px 18px 18px", c="#DFF2E8") + (
-         "background:#163426;border:1px solid rgba(37,211,102,0.25);"
-         "box-shadow:0 2px 14px rgba(37,211,102,0.09);")
-_BBOT  = _BBASE.format(r="4px 18px 18px 18px", c="#E4EAF0") + (
-         "background:#161E2A;border:1px solid rgba(255,255,255,0.07);"
-         "box-shadow:0 2px 14px rgba(0,0,0,0.25);")
-_AVBASE= "width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;"
-_AVUSR = _AVBASE + "background:#25D366;color:#071A0E;order:2;"
-_AVBOT = _AVBASE + "background:#1A2535;border:1px solid rgba(37,211,102,0.28);order:0;"
+          "line-height:1.65;word-break:break-word;color:{c};background:{bg};")
+_BUSER = _BBASE.format(
+    r="18px 4px 18px 18px", c=T["bub_u_txt"], bg=T["bub_u_bg"]
+) + "border:1px solid rgba(37,211,102,0.25);box-shadow:0 2px 12px rgba(37,211,102,0.08);"
+
+_BBOT  = _BBASE.format(
+    r="4px 18px 18px 18px", c=T["bub_b_txt"], bg=T["bub_b_bg"]
+) + f"border:1px solid {T['border']};box-shadow:0 2px 12px rgba(0,0,0,0.1);"
+
+_AV    = "width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;"
+_AVUSR = _AV + "background:#25D366;color:#071A0E;order:2;"
+_AVBOT = _AV + f"background:{T['av_bot_bg']};border:1px solid {T['border_acc']};order:0;"
 
 rows = ""
 for msg in st.session_state.messages:
     content = _md(msg["content"])
     if msg["role"] == "user":
-        rows += (
-            f'<div style="{_ROW}justify-content:flex-end;">'
-            f'  <div style="{_BUSER}">{content}</div>'
-            f'  <div style="{_AVUSR}">👤</div>'
-            f'</div>'
-        )
+        rows += (f'<div style="{_ROW}justify-content:flex-end;">'
+                 f'<div style="{_BUSER}">{content}</div>'
+                 f'<div style="{_AVUSR}">👤</div></div>')
     else:
-        rows += (
-            f'<div style="{_ROW}justify-content:flex-start;">'
-            f'  <div style="{_AVBOT}">🤖</div>'
-            f'  <div style="{_BBOT}">{content}</div>'
-            f'</div>'
-        )
+        rows += (f'<div style="{_ROW}justify-content:flex-start;">'
+                 f'<div style="{_AVBOT}">🤖</div>'
+                 f'<div style="{_BBOT}">{content}</div></div>')
 
 st.markdown(
     f'<div style="display:flex;flex-direction:column;padding:4px 0 12px;">{rows}</div>',
@@ -380,7 +409,6 @@ st.markdown(
 # ── Chat input ────────────────────────────────────────────────────────────────
 if user_input := st.chat_input("Ask about your spending…"):
     st.session_state.messages.append({"role": "user", "content": user_input})
-
     with st.spinner("Thinking…"):
         try:
             resp = requests.post(
@@ -392,6 +420,5 @@ if user_input := st.chat_input("Ask about your spending…"):
             reply = resp.json()["response"]
         except requests.exceptions.RequestException as exc:
             reply = f"❌ Couldn't reach the API: {exc}"
-
     st.session_state.messages.append({"role": "assistant", "content": reply})
     st.rerun()
