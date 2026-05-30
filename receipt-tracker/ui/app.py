@@ -83,65 +83,59 @@ section[data-testid="stSidebar"] p,
 section[data-testid="stSidebar"] span,
 section[data-testid="stSidebar"] label { color: var(--text) !important; font-family: var(--font-b) !important; }
 section[data-testid="stSidebar"] h2 {
-  font-family: var(--font-d) !important; font-size: 0.72rem !important;
-  font-weight: 700 !important; letter-spacing: 0.12em !important;
-  text-transform: uppercase !important; color: var(--text-sub) !important;
-  margin: 1.4rem 0 0.6rem !important;
+  font-family: var(--font-d) !important; font-size: 0.95rem !important;
+  font-weight: 700 !important; letter-spacing: 0.01em !important;
+  color: var(--text) !important; white-space: nowrap !important;
+  overflow: visible !important; margin: 1.2rem 0 0.5rem !important;
 }
 
-/* ── File uploader ── */
+/* ── File uploader ── no overflow:hidden, no interference with Browse button */
 [data-testid="stFileUploader"] {
   background: var(--bg-card) !important;
   border: 1.5px dashed var(--border-accent) !important;
   border-radius: var(--radius) !important;
-  overflow: hidden !important;
-  padding-bottom: 0.25rem !important;
 }
-[data-testid="stFileUploader"] *,
-[data-testid="stFileUploaderDropzoneInstructions"] * { color: var(--text-sub) !important; }
+[data-testid="stFileUploaderDropzoneInstructions"] span,
+[data-testid="stFileUploaderDropzoneInstructions"] p { color: var(--text-sub) !important; }
 [data-testid="stFileUploader"]:hover { border-color: var(--accent) !important; }
 
-/* uploaded filename chip — keep it inside the box */
-[data-testid="stFileUploaderFileName"] {
-  margin: 0.25rem 0.5rem 0.25rem !important;
-  word-break: break-all !important;
-}
-
-/* clear gaps between every sidebar element */
-section[data-testid="stSidebar"] .element-container {
-  margin-bottom: 0.6rem !important;
-}
-section[data-testid="stSidebar"] [data-testid="stImage"] {
-  margin-top: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
-}
-section[data-testid="stSidebar"] .stButton {
-  margin-top: 0.25rem !important;
-  margin-bottom: 0 !important;
-}
-
-/* ── Buttons ── */
-.stButton > button {
+/* ── Sidebar pill buttons — only direct .stButton wrappers, NOT inside uploader ── */
+section[data-testid="stSidebar"] > div > div > div > div > .stButton > button,
+section[data-testid="stSidebar"] > div > div > div > .stButton > button {
   font-family: var(--font-d) !important; font-weight: 600 !important;
   font-size: 0.84rem !important; border-radius: 999px !important;
-  border: none !important; transition: all 0.18s ease !important;
+  transition: all 0.18s ease !important; width: 100% !important;
 }
-.stButton > button[kind="primary"] {
+section[data-testid="stSidebar"] > div > div > div > div > .stButton > button[kind="primary"],
+section[data-testid="stSidebar"] > div > div > div > .stButton > button[kind="primary"] {
   background: var(--accent) !important; color: #071A0E !important;
-  box-shadow: 0 0 22px var(--accent-glow) !important;
+  border: none !important; box-shadow: 0 0 22px var(--accent-glow) !important;
 }
-.stButton > button[kind="primary"]:hover {
+section[data-testid="stSidebar"] > div > div > div > div > .stButton > button[kind="primary"]:hover,
+section[data-testid="stSidebar"] > div > div > div > .stButton > button[kind="primary"]:hover {
   background: var(--accent-dark) !important;
   box-shadow: 0 0 32px rgba(37,211,102,0.3) !important;
   transform: translateY(-1px) !important;
 }
-.stButton > button:not([kind="primary"]) {
+section[data-testid="stSidebar"] > div > div > div > div > .stButton > button:not([kind="primary"]),
+section[data-testid="stSidebar"] > div > div > div > .stButton > button:not([kind="primary"]) {
   background: var(--bg-elevated) !important; color: var(--text) !important;
   border: 1px solid var(--border) !important;
 }
-.stButton > button:not([kind="primary"]):hover {
-  border-color: var(--border-accent) !important; color: var(--accent) !important;
+
+/* ── Browse files button inside uploader — reset to natural style ── */
+[data-testid="stFileUploader"] button,
+[data-testid="stFileUploader"] .stButton > button {
+  border-radius: 6px !important; margin-top: 0 !important;
+  font-size: 0.8rem !important; width: auto !important;
+  border: 1px solid var(--border-accent) !important;
+  background: transparent !important; color: var(--accent) !important;
+  box-shadow: none !important; transform: none !important;
 }
+
+/* Sidebar element spacing */
+section[data-testid="stSidebar"] .element-container { margin-bottom: 0.5rem !important; }
+section[data-testid="stSidebar"] [data-testid="stImage"] { margin: 0.4rem 0 !important; }
 
 /* ── Divider ── */
 hr { border-color: var(--border) !important; margin: 0.9rem 0 !important; }
