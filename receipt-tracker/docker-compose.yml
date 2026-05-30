@@ -20,7 +20,7 @@ services:
   api:
     build: .
     ports:
-      - "127.0.0.1:8000:8000"   # loopback only — not exposed to the wider network
+      - "127.0.0.1:8001:8000"   # 8001 on host → 8000 in container (8000 used by aiops-sentinel)
     env_file: .env
     environment:
       DATABASE_URL: postgresql://receipts:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/receipts
@@ -35,10 +35,10 @@ services:
     build: .
     command: streamlit run ui/app.py --server.port 8501 --server.address 0.0.0.0
     ports:
-      - "8501:8501"
+      - "8502:8501"             # 8502 on host → 8501 in container
     env_file: .env
     environment:
-      API_URL: http://api:8000
+      API_URL: http://api:8000  # internal compose network — always 8000 inside
     depends_on:
       - api
 
