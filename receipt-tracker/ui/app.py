@@ -94,10 +94,31 @@ section[data-testid="stSidebar"] h2 {
   background: var(--bg-card) !important;
   border: 1.5px dashed var(--border-accent) !important;
   border-radius: var(--radius) !important;
+  overflow: hidden !important;
+  padding-bottom: 0.25rem !important;
 }
 [data-testid="stFileUploader"] *,
 [data-testid="stFileUploaderDropzoneInstructions"] * { color: var(--text-sub) !important; }
 [data-testid="stFileUploader"]:hover { border-color: var(--accent) !important; }
+
+/* uploaded filename chip — keep it inside the box */
+[data-testid="stFileUploaderFileName"] {
+  margin: 0.25rem 0.5rem 0.25rem !important;
+  word-break: break-all !important;
+}
+
+/* clear gaps between every sidebar element */
+section[data-testid="stSidebar"] .element-container {
+  margin-bottom: 0.6rem !important;
+}
+section[data-testid="stSidebar"] [data-testid="stImage"] {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+section[data-testid="stSidebar"] .stButton {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0 !important;
+}
 
 /* ── Buttons ── */
 .stButton > button {
