@@ -14,9 +14,13 @@ st.set_page_config(
 # ── Markdown → safe HTML (handles bold, italic, code, newlines, bullets) ──────
 def _md(text: str) -> str:
     t = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
-    t = re.sub(r'\*(.+?)\*',     r'<em>\1</em>', t)
-    t = re.sub(r'`(.+?)`',       r'<code>\1</code>', t)
+    t = re.sub(r'\*\*(.+?)\*\*',
+               r'<strong style="color:#ffffff;font-weight:600">\1</strong>', t)
+    t = re.sub(r'\*(.+?)\*',
+               r'<em style="color:#9DB4C8;font-style:italic">\1</em>', t)
+    t = re.sub(r'`(.+?)`',
+               r'<code style="background:rgba(37,211,102,0.15);color:#25D366;'
+               r'border-radius:4px;padding:1px 6px;font-size:0.82rem">\1</code>', t)
     t = t.replace("\n", "<br>")
     return t
 
@@ -318,26 +322,45 @@ with st.sidebar:
             except requests.exceptions.RequestException as exc:
                 st.error(f"API error: {exc}")
 
-# ── Chat history — rendered as guaranteed HTML divs ───────────────────────────
+# ── Chat history ─────────────────────────────────────────────────────────────
+# Inline styles on every element — immune to Streamlit theme, CSS cascade,
+# and specificity fights regardless of light/dark mode setting.
+_ROW   = "display:flex;align-items:flex-end;gap:8px;margin-bottom:10px;"
+_BBASE = ("max-width:76%;padding:12px 16px;border-radius:{r};"
+          "font-family:'DM Sans',sans-serif;font-size:0.9rem;"
+          "line-height:1.65;word-break:break-word;color:{c};")
+_BUSER = _BBASE.format(r="18px 4px 18px 18px", c="#DFF2E8") + (
+         "background:#163426;border:1px solid rgba(37,211,102,0.25);"
+         "box-shadow:0 2px 14px rgba(37,211,102,0.09);")
+_BBOT  = _BBASE.format(r="4px 18px 18px 18px", c="#E4EAF0") + (
+         "background:#161E2A;border:1px solid rgba(255,255,255,0.07);"
+         "box-shadow:0 2px 14px rgba(0,0,0,0.25);")
+_AVBASE= "width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;"
+_AVUSR = _AVBASE + "background:#25D366;color:#071A0E;order:2;"
+_AVBOT = _AVBASE + "background:#1A2535;border:1px solid rgba(37,211,102,0.28);order:0;"
+
 rows = ""
 for msg in st.session_state.messages:
     content = _md(msg["content"])
     if msg["role"] == "user":
         rows += (
-            f'<div class="msg-row msg-user">'
-            f'  <div class="bubble bubble-user">{content}</div>'
-            f'  <div class="avatar avatar-user">👤</div>'
+            f'<div style="{_ROW}justify-content:flex-end;">'
+            f'  <div style="{_BUSER}">{content}</div>'
+            f'  <div style="{_AVUSR}">👤</div>'
             f'</div>'
         )
     else:
         rows += (
-            f'<div class="msg-row msg-bot">'
-            f'  <div class="avatar avatar-bot">🤖</div>'
-            f'  <div class="bubble bubble-bot">{content}</div>'
+            f'<div style="{_ROW}justify-content:flex-start;">'
+            f'  <div style="{_AVBOT}">🤖</div>'
+            f'  <div style="{_BBOT}">{content}</div>'
             f'</div>'
         )
 
-st.markdown(f'<div class="chat-wrap">{rows}</div>', unsafe_allow_html=True)
+st.markdown(
+    f'<div style="display:flex;flex-direction:column;padding:4px 0 12px;">{rows}</div>',
+    unsafe_allow_html=True,
+)
 
 # ── Chat input ────────────────────────────────────────────────────────────────
 if user_input := st.chat_input("Ask about your spending…"):
