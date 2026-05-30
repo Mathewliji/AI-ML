@@ -1,9 +1,69 @@
+# ── Python ──────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-.env
-logs/
-.pytest_cache/
+*.pyd
+.Python
 *.egg-info/
 dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ── Node / JS ────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log
+.pnp/
+.pnp.js
+
+# ── Environment & secrets ────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ── IDEs ─────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ───────────────────────────────────────────
 .DS_Store
+Thumbs.db
+
+# ── Testing / coverage ───────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+logs/
+
+# ── Docker ───────────────────────────────────────
+docker-compose.override.yml
+
+# ── Jupyter ──────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Data & models (usually too large for git) ────
+*.csv
+*.parquet
+*.h5
+*.pkl
+*.joblib
+*.model
+data/raw/
+data/processed/
+models/weights/
